@@ -1,0 +1,41 @@
+name: spy_game
+description: "Spy Game – Spyfall style crossplatform multiplayer game"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Networking
+  http: ^1.2.0
+
+  # QR Code generation
+  qr_flutter: ^4.1.0
+
+  # QR Code scanning (camera)
+  mobile_scanner: ^4.0.0
+
+  # State management
+  provider: ^6.1.2
+
+  # Fonts & design
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+
+  # Local prefs (store server URL)
+  shared_preferences: ^2.2.3
+
+  # Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
