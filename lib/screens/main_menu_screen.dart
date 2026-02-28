@@ -4,162 +4,92 @@ import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../l10n/strings.dart';
 
-class MainMenuScreen extends StatefulWidget {
+class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
   @override
-  State<MainMenuScreen> createState() => _MainMenuScreenState();
-}
-
-class _MainMenuScreenState extends State<MainMenuScreen> {
-  final _urlController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final gp = context.read<GameProvider>();
-    _urlController.text = gp.serverUrl;
-  }
-
-  void _showServerConfig() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Server URL',
-                  style: TextStyle(
-                      color: AppTheme.textMain,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _urlController,
-                style: const TextStyle(color: AppTheme.textMain),
-                decoration: const InputDecoration(
-                  hintText: 'http://192.168.1.100:8080',
-                  prefixIcon: Icon(Icons.dns, color: AppTheme.textSub),
-                ),
-                keyboardType: TextInputType.url,
-              ),
-              const SizedBox(height: 16),
-              GradientButton(
-                label: 'Yadda saxla',
-                onTap: () {
-                  context.read<GameProvider>().updateServerUrl(
-                      _urlController.text.trim());
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Server URL yeniləndi'),
-                        backgroundColor: AppTheme.accent),
-                  );
-                },
-                icon: Icons.save,
-              ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    context.watch<GameProvider>();
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-                // Logo area
-                Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppTheme.primaryGradient,
-                        boxShadow: [
-                          BoxShadow(
-                              color: AppTheme.primary.withOpacity(0.4),
-                              blurRadius: 30,
-                              spreadRadius: 5)
-                        ],
-                      ),
-                      child: const Icon(Icons.visibility,
-                          color: Colors.white, size: 50),
-                    )
-                        .animate()
-                        .scale(
-                            begin: const Offset(0, 0),
-                            duration: 600.ms,
-                            curve: Curves.elasticOut)
-                        .fadeIn(),
-                    const SizedBox(height: 20),
-                    Text(
-                      'SPY GAME',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 5,
-                        shadows: [
-                          Shadow(
-                              color: AppTheme.primary.withOpacity(0.5),
-                              blurRadius: 16)
-                        ],
-                      ),
-                    ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Otaqda casusları tap!',
-                      style: TextStyle(color: AppTheme.textSub, fontSize: 14),
-                    ).animate(delay: 300.ms).fadeIn(),
-                  ],
-                ),
-                const Spacer(flex: 3),
-                // Buttons
-                GradientButton(
-                  label: 'Oyun Yarat',
-                  onTap: () => Navigator.pushNamed(context, '/create'),
-                  gradient: AppTheme.primaryGradient,
-                  icon: Icons.add_circle_outline,
-                ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.3),
-                const SizedBox(height: 16),
-                GradientButton(
-                  label: 'Oyuna Qoşul',
-                  onTap: () => Navigator.pushNamed(context, '/join'),
-                  gradient: LinearGradient(colors: [
-                    AppTheme.secondary,
-                    AppTheme.secondary.withOpacity(0.7)
-                  ]),
-                  icon: Icons.qr_code_scanner,
-                ).animate(delay: 500.ms).fadeIn().slideY(begin: 0.3),
-                const Spacer(flex: 2),
-                // Settings icon
-                IconButton(
-                  onPressed: _showServerConfig,
-                  icon: const Icon(Icons.settings, color: AppTheme.textSub),
-                ).animate(delay: 700.ms).fadeIn(),
-                const SizedBox(height: 12),
-              ],
-            ),
+            child: Column(children: [
+              const Spacer(flex: 2),
+              // Logo
+              Column(children: [
+                Container(
+                  width: 110, height: 110,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle, gradient: AppTheme.primaryGradient,
+                    boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.5), blurRadius: 40, spreadRadius: 8)],
+                  ),
+                  child: const Icon(Icons.visibility, color: Colors.white, size: 58),
+                ).animate().scale(begin: const Offset(0, 0), duration: 600.ms, curve: Curves.elasticOut).fadeIn(),
+                const SizedBox(height: 20),
+                Text('SPY GAME',
+                  style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900,
+                    letterSpacing: 6, shadows: [Shadow(color: AppTheme.primary.withOpacity(0.5), blurRadius: 20)]),
+                ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
+                const SizedBox(height: 6),
+                Text(L.t('tagline'), style: const TextStyle(color: AppTheme.textSub, fontSize: 14)).animate(delay: 300.ms).fadeIn(),
+              ]),
+              const Spacer(flex: 2),
+              // Main buttons
+              GradientButton(
+                label: L.t('create_game'), icon: Icons.add_circle_outline,
+                onTap: () => Navigator.pushNamed(context, '/create'),
+              ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.3),
+              const SizedBox(height: 14),
+              GradientButton(
+                label: L.t('join_game'), icon: Icons.qr_code_scanner,
+                gradient: LinearGradient(colors: [AppTheme.secondary, AppTheme.secondary.withOpacity(0.7)]),
+                onTap: () => Navigator.pushNamed(context, '/join'),
+              ).animate(delay: 500.ms).fadeIn().slideY(begin: 0.3),
+              const Spacer(),
+              // Secondary buttons row
+              Row(children: [
+                Expanded(child: _SecondaryBtn(icon: Icons.leaderboard, label: L.t('leaderboard'), route: '/leaderboard')),
+                const SizedBox(width: 10),
+                Expanded(child: _SecondaryBtn(icon: Icons.history, label: L.t('history'), route: '/history')),
+                const SizedBox(width: 10),
+                Expanded(child: _SecondaryBtn(icon: Icons.settings, label: L.t('settings'), route: '/settings')),
+              ]).animate(delay: 700.ms).fadeIn(),
+              const SizedBox(height: 24),
+            ]),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SecondaryBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+  const _SecondaryBtn({required this.icon, required this.label, required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, route),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: AppTheme.primary, size: 24),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(color: AppTheme.textSub, fontSize: 11), textAlign: TextAlign.center),
+        ]),
       ),
     );
   }

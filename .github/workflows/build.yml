@@ -1,9 +1,9 @@
-name: Build APK
+name: Build APK v2
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:   # Manual trigger (Run workflow button)
+    branches: [ master, main ]
+  workflow_dispatch:
 
 jobs:
   build-apk:
@@ -26,15 +26,105 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Create base Flutter project
+        run: |
+          flutter create --org com.spygame --project-name spy_game /tmp/base_app
+
+      - name: Copy our source files
+        run: |
+          rm -rf /tmp/base_app/lib
+          cp -r lib /tmp/base_app/lib
+
+          cp pubspec.yaml /tmp/base_app/pubspec.yaml
+
+      - name: Generate sound assets
+        run: |
+          mkdir -p /tmp/base_app/assets/sounds
+          python3 << 'PYEOF'
+          import wave, struct, math, os
+
+          def gen_tone(filename, freq, duration, volume=0.4, fade=0.01):
+              sample_rate = 44100
+              samples = int(sample_rate * duration)
+              fade_samples = int(sample_rate * fade)
+              with wave.open(filename, 'w') as f:
+                  f.setnchannels(1)
+                  f.setsampwidth(2)
+                  f.setframerate(sample_rate)
+                  for i in range(samples):
+                      t = i / sample_rate
+                      val = math.sin(2 * math.pi * freq * t)
+                      # fade in/out
+                      if i < fade_samples:
+                          val *= i / fade_samples
+                      elif i > samples - fade_samples:
+                          val *= (samples - i) / fade_samples
+                      f.writeframes(struct.pack('<h', int(val * volume * 32767)))
+
+          def gen_chord(filename, freqs, duration, volume=0.25):
+              sample_rate = 44100
+              samples = int(sample_rate * duration)
+              fade_s = int(sample_rate * 0.02)
+              with wave.open(filename, 'w') as f:
+                  f.setnchannels(1)
+                  f.setsampwidth(2)
+                  f.setframerate(sample_rate)
+                  for i in range(samples):
+                      t = i / sample_rate
+                      val = sum(math.sin(2 * math.pi * fq * t) for fq in freqs) / len(freqs)
+                      if i < fade_s: val *= i / fade_s
+                      elif i > samples - fade_s: val *= (samples - i) / fade_s
+                      f.writeframes(struct.pack('<h', int(val * volume * 32767)))
+
+          base = '/tmp/base_app/assets/sounds'
+          # Card flip - quick swoosh
+          gen_tone(f'{base}/card_flip.wav', 880, 0.08, 0.3)
+          # Round end - two tones
+          gen_chord(f'{base}/round_end.wav', [523, 659, 784], 0.4, 0.3)
+          # Game over - descending
+          gen_chord(f'{base}/game_over.wav', [784, 659, 523, 440], 0.8, 0.2)
+          # Timer tick - short beep
+          gen_tone(f'{base}/timer_tick.wav', 1000, 0.05, 0.2)
+          # Timer warning - urgent
+          gen_chord(f'{base}/timer_warning.wav', [880, 1100], 0.3, 0.35)
+          # Win - happy chord
+          gen_chord(f'{base}/win.wav', [523, 659, 784, 1047], 1.0, 0.25)
+
+          print('✅ 6 ses faylı yaradıldı:')
+          for f in os.listdir(base):
+              size = os.path.getsize(f'{base}/{f}')
+              print(f'   {f}: {size} bytes')
+          PYEOF
+
+      - name: Add camera and internet permissions
+        run: |
+          sed -i 's/<\/manifest>/    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.INTERNET" \/>\n    <uses-permission android:name="android.permission.VIBRATE" \/>\n<\/manifest>/' \
+            /tmp/base_app/android/app/src/main/AndroidManifest.xml
+
+      - name: Fix Kotlin stdlib conflict
+        run: |
+          cat >> /tmp/base_app/android/app/build.gradle << 'GRADLE'
+
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }
+          GRADLE
+
       - name: Get dependencies
+        working-directory: /tmp/base_app
         run: flutter pub get
 
       - name: Build release APK
-        run: flutter build apk --release --no-shrink
+        working-directory: /tmp/base_app
+        run: flutter build apk --release
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: spy-game-release
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 7
+          name: spy-game-v2-${{ github.run_id }}
+          path: /tmp/base_app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

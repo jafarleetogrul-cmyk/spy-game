@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../l10n/strings.dart';
 
 class GameOverScreen extends StatefulWidget {
   const GameOverScreen({super.key});
-
   @override
   State<GameOverScreen> createState() => _GameOverScreenState();
 }
@@ -17,7 +17,8 @@ class _GameOverScreenState extends State<GameOverScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<GameProvider>().fetchScoreboard();
+      final gp = context.read<GameProvider>();
+      if (gp.scoreboard.isEmpty) await gp.fetchScoreboard();
     });
   }
 
@@ -30,170 +31,133 @@ class _GameOverScreenState extends State<GameOverScreen> {
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
         child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 28),
-                      // Trophy
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppTheme.primaryGradient,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primary.withOpacity(0.4),
-                              blurRadius: 30,
-                              spreadRadius: 8,
-                            )
-                          ],
-                        ),
-                        child: const Icon(Icons.emoji_events,
-                            color: Colors.white, size: 56),
-                      )
-                          .animate()
-                          .scale(
-                              begin: const Offset(0, 0),
-                              duration: 700.ms,
-                              curve: Curves.elasticOut)
-                          .fadeIn(),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'OYUN BİTDİ!',
-                        style: TextStyle(
-                          color: AppTheme.textMain,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4,
-                        ),
-                      ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Yekun hesab',
-                        style: TextStyle(
-                            color: AppTheme.textSub.withOpacity(0.7),
-                            fontSize: 14),
-                      ).animate(delay: 400.ms).fadeIn(),
-                      const SizedBox(height: 28),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Scoreboard
-              if (scores.isNotEmpty)
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final s = scores[i];
-                        return ScoreRow(
-                          rank: i + 1,
-                          name: s.name,
-                          spyWins: s.stats.spyWins,
-                          civilWins: s.stats.civilWins,
-                          totalPoints: s.stats.totalPoints,
-                        );
-                      },
-                      childCount: scores.length,
+          child: CustomScrollView(slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(children: [
+                  const SizedBox(height: 28),
+                  // Trophy
+                  Container(
+                    width: 110, height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppTheme.goldGradient,
+                      boxShadow: [BoxShadow(color: AppTheme.gold.withOpacity(0.5), blurRadius: 40, spreadRadius: 10)],
                     ),
-                  ),
-                )
-              else
-                const SliverToBoxAdapter(
-                  child: Center(
-                      child: CircularProgressIndicator(
-                          color: AppTheme.primary)),
-                ),
+                    child: const Icon(Icons.emoji_events, color: Colors.white, size: 60),
+                  ).animate().scale(begin: const Offset(0, 0), duration: 800.ms, curve: Curves.elasticOut).fadeIn(),
+                  const SizedBox(height: 16),
+                  Text(L.t('game_over'),
+                    style: const TextStyle(color: AppTheme.textMain, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 4),
+                  ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
+                  const SizedBox(height: 6),
+                  Text(L.t('final_score'), style: TextStyle(color: AppTheme.textSub.withOpacity(0.7), fontSize: 14))
+                      .animate(delay: 400.ms).fadeIn(),
+                  const SizedBox(height: 28),
+                ]),
+              ),
+            ),
 
-              // Winner highlight
-              if (scores.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 16),
-                    child: GlassCard(
-                      borderColor: const Color(0xFFFFD700).withOpacity(0.4),
-                      child: Row(
-                        children: [
-                          const Text('🏆', style: TextStyle(fontSize: 32)),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Qalib',
-                                    style: TextStyle(
-                                        color: AppTheme.textSub,
-                                        fontSize: 12)),
-                                Text(
-                                  scores.first.name,
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFD700),
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${scores.first.stats.totalPoints} xal',
-                            style: const TextStyle(
-                              color: Color(0xFFFFD700),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate(delay: 600.ms).fadeIn().scale(
-                        begin: const Offset(0.9, 0.9)),
+            // Scoreboard
+            if (scores.isNotEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverList(delegate: SliverChildBuilderDelegate(
+                  (ctx, i) => ScoreRow(
+                    rank: i + 1, name: scores[i].name,
+                    spyWins: scores[i].stats.spyWins,
+                    civilWins: scores[i].stats.civilWins,
+                    totalPoints: scores[i].stats.totalPoints,
                   ),
-                ),
+                  childCount: scores.length,
+                )),
+              )
+            else
+              const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator(color: AppTheme.primary))),
 
-              // Buttons
+            // Winner highlight
+            if (scores.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                  child: Column(
-                    children: [
-                      if (gp.isHost)
-                        GradientButton(
-                          label: 'Yeni Oyun',
-                          onTap: () {
-                            gp.resetGame();
-                            Navigator.pushNamedAndRemoveUntil(
-                                context, '/create', (_) => false);
-                          },
-                          icon: Icons.refresh,
-                        ).animate(delay: 700.ms).fadeIn().slideY(begin: 0.2),
-                      const SizedBox(height: 12),
-                      GradientButton(
-                        label: 'Ana Menüyə Qayıt',
-                        onTap: () {
-                          gp.resetGame();
-                          Navigator.pushNamedAndRemoveUntil(
-                              context, '/menu', (_) => false);
-                        },
-                        gradient: LinearGradient(colors: [
-                          Colors.white12,
-                          Colors.white.withOpacity(0.05)
-                        ]),
-                        icon: Icons.home,
-                      ).animate(delay: 800.ms).fadeIn().slideY(begin: 0.2),
-                    ],
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: GlassCard(
+                    borderColor: AppTheme.gold.withOpacity(0.4),
+                    child: Row(children: [
+                      const Text('🏆', style: TextStyle(fontSize: 36)),
+                      const SizedBox(width: 16),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(L.t('winner'), style: const TextStyle(color: AppTheme.textSub, fontSize: 12)),
+                        Text(scores.first.name, style: const TextStyle(color: AppTheme.gold, fontSize: 22, fontWeight: FontWeight.w800)),
+                      ])),
+                      Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        Text('${scores.first.stats.totalPoints}', style: const TextStyle(color: AppTheme.gold, fontSize: 28, fontWeight: FontWeight.w900)),
+                        Text(L.t('points'), style: const TextStyle(color: AppTheme.textSub, fontSize: 12)),
+                      ]),
+                    ]),
+                  ).animate(delay: 600.ms).fadeIn().scale(begin: const Offset(0.9, 0.9)),
                 ),
               ),
-            ],
-          ),
+
+            // Buttons
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: Row(children: [
+                  Expanded(child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/leaderboard'),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.primary.withOpacity(0.3))),
+                      child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.leaderboard, color: AppTheme.primary, size: 22),
+                        SizedBox(height: 2),
+                        Text('Liderboard', style: TextStyle(color: AppTheme.textSub, fontSize: 11)),
+                      ]),
+                    ),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/history'),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(color: AppTheme.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.accent.withOpacity(0.3))),
+                      child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.history, color: AppTheme.accent, size: 22),
+                        SizedBox(height: 2),
+                        Text('Tarixçə', style: TextStyle(color: AppTheme.textSub, fontSize: 11)),
+                      ]),
+                    ),
+                  )),
+                ]).animate(delay: 700.ms).fadeIn(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: GradientButton(
+                  label: L.t('new_game'), icon: Icons.refresh,
+                  onTap: () {
+                    gp.resetGame();
+                    Navigator.pushNamedAndRemoveUntil(context, '/create', (_) => false);
+                  },
+                ).animate(delay: 800.ms).fadeIn().slideY(begin: 0.2),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                child: GradientButton(
+                  label: L.t('back_to_menu'), icon: Icons.home,
+                  gradient: LinearGradient(colors: [Colors.white12, Colors.white.withOpacity(0.05)]),
+                  onTap: () {
+                    gp.resetGame();
+                    Navigator.pushNamedAndRemoveUntil(context, '/menu', (_) => false);
+                  },
+                ).animate(delay: 900.ms).fadeIn().slideY(begin: 0.2),
+              ),
+            ),
+          ]),
         ),
       ),
     );
