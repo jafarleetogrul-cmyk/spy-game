@@ -1,7 +1,7 @@
 name: spy_game
-description: "Spy Game – Spyfall style crossplatform multiplayer game"
+description: "Spy Game – Spyfall multiplayer v3"
 publish_to: "none"
-version: 2.0.0+1
+version: 3.0.0+1
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -9,30 +9,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # Networking
   http: ^1.2.0
-
-  # QR
   qr_flutter: ^4.1.0
   mobile_scanner: ^4.0.0
-
-  # State
   provider: ^6.1.2
-
-  # UI
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
-
-  # Storage (leaderboard + history)
   shared_preferences: ^2.2.3
-
-  # Sound
   audioplayers: ^5.2.1
-
-  # Vibration
   vibration: ^1.8.4
-
   cupertino_icons: ^1.0.6
 
 dev_dependencies:

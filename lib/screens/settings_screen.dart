@@ -13,214 +13,152 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _urlController;
-  late String _selectedLang;
-  late bool _sound;
-  late bool _vibration;
+  late TextEditingController _urlCtrl;
+  late String _lang;
+  late bool _sound, _vib;
   late int _roundTime;
 
   @override
   void initState() {
     super.initState();
     final gp = context.read<GameProvider>();
-    _urlController = TextEditingController(text: gp.serverUrl);
-    _selectedLang = gp.language;
-    _sound = gp.soundEnabled;
-    _vibration = gp.vibrationEnabled;
-    _roundTime = gp.defaultRoundTime;
+    _urlCtrl    = TextEditingController(text: gp.serverUrl);
+    _lang       = gp.language;
+    _sound      = gp.soundEnabled;
+    _vib        = gp.vibrationEnabled;
+    _roundTime  = gp.defaultRoundTime;
   }
 
   @override
-  void dispose() {
-    _urlController.dispose();
-    super.dispose();
-  }
+  void dispose() { _urlCtrl.dispose(); super.dispose(); }
 
   Future<void> _save() async {
     await context.read<GameProvider>().saveSettings(
-      lang: _selectedLang,
-      sound: _sound,
-      vibration: _vibration,
-      url: _urlController.text.trim(),
-      roundTime: _roundTime,
+      lang: _lang, sound: _sound, vibration: _vib,
+      url: _urlCtrl.text.trim(), roundTime: _roundTime,
     );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(L.t('settings_saved')), backgroundColor: AppTheme.accent),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(L.t('settings_saved')), backgroundColor: AppTheme.accent));
       Navigator.pop(context);
     }
   }
 
-  Widget _sectionTitle(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, top: 8),
-    child: Text(text, style: const TextStyle(color: AppTheme.textSub, fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1)),
+  Widget _section(String text) => Padding(
+    padding: const EdgeInsets.only(top: 16, bottom: 8),
+    child: Text(text, style: const TextStyle(color: AppTheme.textSub, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
   );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.bgGradient),
-        child: SafeArea(
-          child: CustomScrollView(slivers: [
-            SliverAppBar(
-              backgroundColor: Colors.transparent,
-              leading: IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () => Navigator.pop(context)),
-              title: Text(L.t('settings')),
-              floating: true,
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverList(delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
+        decoration: const BoxDecoration(gradient: AppTheme.bgGrad),
+        child: SafeArea(child: CustomScrollView(slivers: [
+          SliverAppBar(backgroundColor: Colors.transparent, floating: true,
+            leading: IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () => Navigator.pop(context)),
+            title: Text(L.t('settings'))),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            sliver: SliverList(delegate: SliverChildListDelegate([
 
-                // ── Language ──────────────────────────────
-                _sectionTitle('🌐  ${L.t('language')}'),
-                GlassCard(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(children: [
-                    _LangBtn(label: '🇦🇿 AZ', value: 'az', selected: _selectedLang, onTap: (v) => setState(() => _selectedLang = v)),
-                    const SizedBox(width: 8),
-                    _LangBtn(label: '🇷🇺 RU', value: 'ru', selected: _selectedLang, onTap: (v) => setState(() => _selectedLang = v)),
-                    const SizedBox(width: 8),
-                    _LangBtn(label: '🇬🇧 EN', value: 'en', selected: _selectedLang, onTap: (v) => setState(() => _selectedLang = v)),
-                  ]),
-                ).animate().fadeIn(delay: 100.ms),
-                const SizedBox(height: 16),
+              _section('🌐  ${L.t('language')}'),
+              GlassCard(padding: const EdgeInsets.all(8),
+                child: Row(children: [
+                  _LBtn(label: '🇦🇿 AZ', val: 'az', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                  const SizedBox(width: 8),
+                  _LBtn(label: '🇷🇺 RU', val: 'ru', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                  const SizedBox(width: 8),
+                  _LBtn(label: '🇬🇧 EN', val: 'en', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                ]),
+              ).animate().fadeIn(delay: 100.ms),
 
-                // ── Sound & Vibration ─────────────────────
-                _sectionTitle('🔊  ${L.t('sound')} & ${L.t('vibration')}'),
-                GlassCard(
-                  child: Column(children: [
-                    _ToggleRow(
-                      icon: Icons.volume_up, label: L.t('sound'),
-                      value: _sound, onChanged: (v) => setState(() => _sound = v),
-                    ),
-                    const Divider(color: Colors.white10, height: 20),
-                    _ToggleRow(
-                      icon: Icons.vibration, label: L.t('vibration'),
-                      value: _vibration, onChanged: (v) => setState(() => _vibration = v),
-                    ),
-                  ]),
-                ).animate().fadeIn(delay: 200.ms),
-                const SizedBox(height: 16),
+              _section('🔊  ${L.t('sound')} & ${L.t('vibration')}'),
+              GlassCard(child: Column(children: [
+                _Toggle(icon: Icons.volume_up, label: L.t('sound'), val: _sound, onChanged: (v) => setState(() => _sound=v)),
+                const Divider(color: Colors.white10, height: 20),
+                _Toggle(icon: Icons.vibration, label: L.t('vibration'), val: _vib, onChanged: (v) => setState(() => _vib=v)),
+              ])).animate().fadeIn(delay: 180.ms),
 
-                // ── Round Time ────────────────────────────
-                _sectionTitle('⏱  ${L.t('round_time')}'),
-                GlassCard(
-                  child: Column(children: [
-                    Row(children: [
-                      const Icon(Icons.timer, color: AppTheme.primary, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text('$_roundTime dəqiqə', style: const TextStyle(color: AppTheme.textMain, fontSize: 15))),
-                      _CounterMini(value: _roundTime, min: 1, max: 15,
-                        onChanged: (v) => setState(() => _roundTime = v)),
-                    ]),
-                  ]),
-                ).animate().fadeIn(delay: 300.ms),
-                const SizedBox(height: 16),
+              _section('⏱  ${L.t('round_time')}'),
+              GlassCard(child: Row(children: [
+                const Icon(Icons.timer, color: AppTheme.primary, size: 20), const SizedBox(width: 12),
+                Expanded(child: Text('$_roundTime dəqiqə', style: const TextStyle(color: AppTheme.textMain, fontSize: 15))),
+                _CntBtn(Icons.remove, _roundTime > 1 ? () => setState(() => _roundTime--) : null),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('$_roundTime', style: const TextStyle(color: AppTheme.primary, fontSize: 18, fontWeight: FontWeight.w700))),
+                _CntBtn(Icons.add, _roundTime < 15 ? () => setState(() => _roundTime++) : null),
+              ])).animate().fadeIn(delay: 260.ms),
 
-                // ── Server URL ────────────────────────────
-                _sectionTitle('🖥  ${L.t('server_url')}'),
-                GlassCard(
-                  child: TextField(
-                    controller: _urlController,
-                    style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'http://192.168.1.100:8080',
-                      prefixIcon: const Icon(Icons.dns, color: AppTheme.primary),
-                      border: InputBorder.none, filled: false,
-                    ),
-                    keyboardType: TextInputType.url,
-                  ),
-                ).animate().fadeIn(delay: 400.ms),
-                const SizedBox(height: 24),
+              _section('🖥  ${L.t('server_url')}'),
+              GlassCard(child: TextField(
+                controller: _urlCtrl,
+                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'http://192.168.1.100:8080',
+                  prefixIcon: const Icon(Icons.dns, color: AppTheme.primary),
+                  border: InputBorder.none, filled: false),
+                keyboardType: TextInputType.url,
+              )).animate().fadeIn(delay: 340.ms),
 
-                GradientButton(label: L.t('save'), onTap: _save, icon: Icons.save)
-                    .animate().fadeIn(delay: 500.ms),
-                const SizedBox(height: 24),
-              ])),
-            ),
-          ]),
-        ),
+              const SizedBox(height: 24),
+              GradientButton(label: L.t('save'), icon: Icons.save, onTap: _save)
+                .animate().fadeIn(delay: 400.ms),
+              const SizedBox(height: 32),
+            ])),
+          ),
+        ])),
       ),
     );
   }
 }
 
-class _LangBtn extends StatelessWidget {
-  final String label, value, selected;
-  final ValueChanged<String> onTap;
-  const _LangBtn({required this.label, required this.value, required this.selected, required this.onTap});
-
+class _LBtn extends StatelessWidget {
+  final String label, val, sel; final ValueChanged<String> onTap;
+  const _LBtn({required this.label, required this.val, required this.sel, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final isSelected = value == selected;
+    final s = val == sel;
     return Expanded(child: GestureDetector(
-      onTap: () => onTap(value),
+      onTap: () => onTap(val),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          gradient: isSelected ? AppTheme.primaryGradient : null,
-          color: isSelected ? null : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(10),
-        ),
+          gradient: s ? AppTheme.primaryGrad : null,
+          color: s ? null : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(10)),
         child: Text(label, textAlign: TextAlign.center, style: TextStyle(
-          color: isSelected ? Colors.white : AppTheme.textSub,
-          fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, fontSize: 13,
-        )),
+          color: s ? Colors.white : AppTheme.textSub,
+          fontWeight: s ? FontWeight.w700 : FontWeight.normal, fontSize: 13)),
       ),
     ));
   }
 }
 
-class _ToggleRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  const _ToggleRow({required this.icon, required this.label, required this.value, required this.onChanged});
-
+class _Toggle extends StatelessWidget {
+  final IconData icon; final String label; final bool val; final ValueChanged<bool> onChanged;
+  const _Toggle({required this.icon, required this.label, required this.val, required this.onChanged});
   @override
-  Widget build(BuildContext context) {
-    return Row(children: [
-      Icon(icon, color: AppTheme.primary, size: 20),
-      const SizedBox(width: 12),
-      Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textMain, fontSize: 15))),
-      Switch(value: value, onChanged: onChanged, activeColor: AppTheme.primary),
-    ]);
-  }
+  Widget build(BuildContext context) => Row(children: [
+    Icon(icon, color: AppTheme.primary, size: 20), const SizedBox(width: 12),
+    Expanded(child: Text(label, style: const TextStyle(color: AppTheme.textMain, fontSize: 15))),
+    Switch(value: val, onChanged: onChanged, activeColor: AppTheme.primary),
+  ]);
 }
 
-class _CounterMini extends StatelessWidget {
-  final int value, min, max;
-  final ValueChanged<int> onChanged;
-  const _CounterMini({required this.value, required this.min, required this.max, required this.onChanged});
-
+class _CntBtn extends StatelessWidget {
+  final IconData icon; final VoidCallback? onTap;
+  const _CntBtn(this.icon, this.onTap);
   @override
-  Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      _btn(Icons.remove, value > min ? () => onChanged(value - 1) : null),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text('$value', style: const TextStyle(color: AppTheme.primary, fontSize: 18, fontWeight: FontWeight.w700)),
-      ),
-      _btn(Icons.add, value < max ? () => onChanged(value + 1) : null),
-    ]);
-  }
-
-  Widget _btn(IconData icon, VoidCallback? onTap) => GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
       width: 30, height: 30,
       decoration: BoxDecoration(
         color: onTap != null ? AppTheme.primary.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
         shape: BoxShape.circle,
-        border: Border.all(color: onTap != null ? AppTheme.primary.withOpacity(0.5) : Colors.grey.withOpacity(0.2)),
-      ),
-      child: Icon(icon, color: onTap != null ? AppTheme.primary : Colors.grey, size: 16),
-    ),
+        border: Border.all(color: onTap != null ? AppTheme.primary.withOpacity(0.5) : Colors.grey.withOpacity(0.2))),
+      child: Icon(icon, color: onTap != null ? AppTheme.primary : Colors.grey, size: 16)),
   );
 }
