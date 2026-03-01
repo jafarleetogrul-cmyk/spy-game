@@ -1,4 +1,4 @@
-name: Build APK v2
+name: Build APK v3
 
 on:
   push:
