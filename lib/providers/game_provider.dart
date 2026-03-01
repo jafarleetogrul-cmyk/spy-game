@@ -7,9 +7,9 @@ import '../services/sound_service.dart';
 import '../l10n/strings.dart';
 
 class GameProvider extends ChangeNotifier {
-  // ── API ──────────────────────────────────────────────────
+  // ── Server URL – sabit, dəyişdirilmir ────────────────────
+  static const String serverUrl = 'https://spygameserver.pythonanywhere.com';
   late ApiService _api;
-  String serverUrl = 'http://10.0.2.2:8080';
 
   // ── Settings ─────────────────────────────────────────────
   String language = 'az';
@@ -47,7 +47,6 @@ class GameProvider extends ChangeNotifier {
   bool get isLoading => _loading;
   String? get lastError => _error;
   void clearError() { _error = null; notifyListeners(); }
-
   void _setLoading(bool v) { _loading = v; notifyListeners(); }
 
   GameProvider() {
@@ -57,23 +56,21 @@ class GameProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     final s = await StorageService.getSettings();
-    language     = s['language'] ?? 'az';
-    soundEnabled = s['sound'] ?? true;
+    language         = s['language'] ?? 'az';
+    soundEnabled     = s['sound'] ?? true;
     vibrationEnabled = s['vibration'] ?? true;
-    serverUrl    = s['server_url'] ?? 'http://10.0.2.2:8080';
     defaultRoundTime = s['round_time'] ?? 5;
     L.setLang(language);
     SoundService.soundEnabled = soundEnabled;
     SoundService.vibrationEnabled = vibrationEnabled;
     _api = ApiService(serverUrl);
 
-    // Try auto-login
+    // Auto-login
     final auth = await StorageService.getAuth();
     if (auth['token'] != null) {
       _api.setToken(auth['token']);
       try {
-        final user = await _api.getMe();
-        currentUser = user;
+        currentUser = await _api.getMe();
       } catch (_) {
         await StorageService.clearAuth();
         _api.setToken(null);
@@ -82,7 +79,7 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Auth actions ──────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────
   Future<void> register(String username, String password) async {
     _setLoading(true);
     try {
@@ -91,10 +88,8 @@ class GameProvider extends ChangeNotifier {
       await StorageService.saveAuth(token: user.token, username: user.username, userId: user.userId);
       currentUser = user;
       _error = null;
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally { _setLoading(false); }
+    } catch (e) { _error = e.toString(); rethrow; }
+    finally { _setLoading(false); }
   }
 
   Future<void> login(String username, String password) async {
@@ -105,10 +100,8 @@ class GameProvider extends ChangeNotifier {
       await StorageService.saveAuth(token: user.token, username: user.username, userId: user.userId);
       currentUser = user;
       _error = null;
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally { _setLoading(false); }
+    } catch (e) { _error = e.toString(); rethrow; }
+    finally { _setLoading(false); }
   }
 
   Future<void> logout() async {
@@ -119,20 +112,16 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Settings ──────────────────────────────────────────────
+  // ── Settings (URL yoxdur artıq) ───────────────────────────
   Future<void> saveSettings({required String lang, required bool sound,
-    required bool vibration, required String url, required int roundTime}) async {
-    language = lang; soundEnabled = sound; vibrationEnabled = vibration;
-    serverUrl = url.endsWith('/') ? url.substring(0, url.length-1) : url;
-    defaultRoundTime = roundTime;
+      required bool vibration, required int roundTime}) async {
+    language = lang; soundEnabled = sound;
+    vibrationEnabled = vibration; defaultRoundTime = roundTime;
     L.setLang(lang);
     SoundService.soundEnabled = sound;
     SoundService.vibrationEnabled = vibration;
-    _api = ApiService(serverUrl);
-    if (currentUser != null) _api.setToken(currentUser!.token);
     await StorageService.saveSettings({
-      'language': lang, 'sound': sound, 'vibration': vibration,
-      'server_url': serverUrl, 'round_time': roundTime,
+      'language': lang, 'sound': sound, 'vibration': vibration, 'round_time': roundTime,
     });
     notifyListeners();
   }
@@ -149,11 +138,9 @@ class GameProvider extends ChangeNotifier {
     if (session == null) return;
     try {
       roomState = await _api.getRoomState(session!.roomId);
-      _error = null;
-      notifyListeners();
+      _error = null; notifyListeners();
     } catch (_) {
-      _error = L.t('connection_error');
-      notifyListeners();
+      _error = L.t('connection_error'); notifyListeners();
     }
   }
 
@@ -161,8 +148,7 @@ class GameProvider extends ChangeNotifier {
   void startCountdown(int minutes) {
     _countdown?.cancel();
     countdownSeconds = minutes * 60;
-    timerRunning = true;
-    timerWarned = false;
+    timerRunning = true; timerWarned = false;
     notifyListeners();
     _countdown = Timer.periodic(const Duration(seconds: 1), (t) {
       if (countdownSeconds <= 0) {
@@ -179,14 +165,14 @@ class GameProvider extends ChangeNotifier {
 
   // ── Game actions ──────────────────────────────────────────
   Future<void> createGame({required int maxPlayers, required int spiesCount,
-    required int roundsCount, required int roundTimeMinutes}) async {
+      required int roundsCount, required int roundTimeMinutes}) async {
     _setLoading(true);
     try {
       final j = await _api.createRoom(maxPlayers: maxPlayers, spiesCount: spiesCount,
-        roundsCount: roundsCount, roundTimeMinutes: roundTimeMinutes, lang: language);
+          roundsCount: roundsCount, roundTimeMinutes: roundTimeMinutes, lang: language);
       session = LocalSession(roomId: j['room_id'], roomCode: j['room_code'],
-        playerId: j['player_id'], playerToken: j['player_token'],
-        hostToken: j['host_token'], joinToken: j['join_token']);
+          playerId: j['player_id'], playerToken: j['player_token'],
+          hostToken: j['host_token'], joinToken: j['join_token']);
       _error = null;
       await _refreshRoom();
     } catch (e) { _error = e.toString(); rethrow; }
@@ -198,7 +184,7 @@ class GameProvider extends ChangeNotifier {
     try {
       final j = await _api.joinRoom(roomId: roomId, roomCode: roomCode, joinToken: joinToken);
       session = LocalSession(roomId: j['room_id'], roomCode: j['room_code'],
-        playerId: j['player_id'], playerToken: j['player_token'], joinToken: joinToken);
+          playerId: j['player_id'], playerToken: j['player_token'], joinToken: joinToken);
       _error = null;
       await _refreshRoom();
     } catch (e) { _error = e.toString(); rethrow; }
@@ -225,8 +211,7 @@ class GameProvider extends ChangeNotifier {
 
   Future<bool> endRound(String winner) async {
     if (session?.hostToken == null) return false;
-    _setLoading(true);
-    stopCountdown();
+    _setLoading(true); stopCountdown();
     try {
       final j = await _api.endRound(roomId: session!.roomId, hostToken: session!.hostToken!, winner: winner);
       await _refreshRoom();
@@ -242,12 +227,8 @@ class GameProvider extends ChangeNotifier {
       final j = await _api.getScoreboardRaw(session!.roomId);
       scoreboard = (j['scoreboard'] as List).map((e) => ScoreEntry.fromJson(e as Map<String,dynamic>)).toList();
       roundResults = (j['rounds'] as List? ?? []).map((e) => RoundResult.fromJson(e as Map<String,dynamic>)).toList();
-      // Refresh user stats after game
       if (currentUser != null) {
-        try {
-          final me = await _api.getMe();
-          currentUser = me;
-        } catch (_) {}
+        try { currentUser = await _api.getMe(); } catch (_) {}
       }
       notifyListeners();
     } catch (e) { _error = e.toString(); notifyListeners(); }

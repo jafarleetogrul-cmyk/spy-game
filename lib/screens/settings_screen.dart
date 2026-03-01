@@ -13,7 +13,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late TextEditingController _urlCtrl;
   late String _lang;
   late bool _sound, _vib;
   late int _roundTime;
@@ -22,20 +21,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final gp = context.read<GameProvider>();
-    _urlCtrl    = TextEditingController(text: gp.serverUrl);
-    _lang       = gp.language;
-    _sound      = gp.soundEnabled;
-    _vib        = gp.vibrationEnabled;
-    _roundTime  = gp.defaultRoundTime;
+    _lang      = gp.language;
+    _sound     = gp.soundEnabled;
+    _vib       = gp.vibrationEnabled;
+    _roundTime = gp.defaultRoundTime;
   }
-
-  @override
-  void dispose() { _urlCtrl.dispose(); super.dispose(); }
 
   Future<void> _save() async {
     await context.read<GameProvider>().saveSettings(
-      lang: _lang, sound: _sound, vibration: _vib,
-      url: _urlCtrl.text.trim(), roundTime: _roundTime,
+      lang: _lang, sound: _sound, vibration: _vib, roundTime: _roundTime,
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -65,19 +59,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _section('🌐  ${L.t('language')}'),
               GlassCard(padding: const EdgeInsets.all(8),
                 child: Row(children: [
-                  _LBtn(label: '🇦🇿 AZ', val: 'az', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                  _LBtn(label: '🇦🇿 AZ', val: 'az', sel: _lang, onTap: (v) => setState(() => _lang = v)),
                   const SizedBox(width: 8),
-                  _LBtn(label: '🇷🇺 RU', val: 'ru', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                  _LBtn(label: '🇷🇺 RU', val: 'ru', sel: _lang, onTap: (v) => setState(() => _lang = v)),
                   const SizedBox(width: 8),
-                  _LBtn(label: '🇬🇧 EN', val: 'en', sel: _lang, onTap: (v) => setState(() => _lang=v)),
+                  _LBtn(label: '🇬🇧 EN', val: 'en', sel: _lang, onTap: (v) => setState(() => _lang = v)),
                 ]),
               ).animate().fadeIn(delay: 100.ms),
 
               _section('🔊  ${L.t('sound')} & ${L.t('vibration')}'),
               GlassCard(child: Column(children: [
-                _Toggle(icon: Icons.volume_up, label: L.t('sound'), val: _sound, onChanged: (v) => setState(() => _sound=v)),
+                _Toggle(icon: Icons.volume_up, label: L.t('sound'), val: _sound, onChanged: (v) => setState(() => _sound = v)),
                 const Divider(color: Colors.white10, height: 20),
-                _Toggle(icon: Icons.vibration, label: L.t('vibration'), val: _vib, onChanged: (v) => setState(() => _vib=v)),
+                _Toggle(icon: Icons.vibration, label: L.t('vibration'), val: _vib, onChanged: (v) => setState(() => _vib = v)),
               ])).animate().fadeIn(delay: 180.ms),
 
               _section('⏱  ${L.t('round_time')}'),
@@ -90,16 +84,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _CntBtn(Icons.add, _roundTime < 15 ? () => setState(() => _roundTime++) : null),
               ])).animate().fadeIn(delay: 260.ms),
 
-              _section('🖥  ${L.t('server_url')}'),
-              GlassCard(child: TextField(
-                controller: _urlCtrl,
-                style: const TextStyle(color: AppTheme.textMain, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'http://192.168.1.100:8080',
-                  prefixIcon: const Icon(Icons.dns, color: AppTheme.primary),
-                  border: InputBorder.none, filled: false),
-                keyboardType: TextInputType.url,
-              )).animate().fadeIn(delay: 340.ms),
+              // Server info - read only, dəyişdirilmir
+              const SizedBox(height: 16),
+              GlassCard(
+                borderColor: AppTheme.accent.withOpacity(0.2),
+                child: Row(children: [
+                  const Icon(Icons.cloud_done, color: AppTheme.accent, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Server', style: TextStyle(color: AppTheme.textSub, fontSize: 11)),
+                    Text('spygameserver.pythonanywhere.com',
+                      style: TextStyle(color: AppTheme.textMain, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ])),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: AppTheme.accent.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                    child: const Text('AKTIV', style: TextStyle(color: AppTheme.accent, fontSize: 10, fontWeight: FontWeight.w700)),
+                  ),
+                ]),
+              ).animate().fadeIn(delay: 320.ms),
 
               const SizedBox(height: 24),
               GradientButton(label: L.t('save'), icon: Icons.save, onTap: _save)

@@ -27,7 +27,7 @@ class StorageService {
   static Future<Map<String,dynamic>> getSettings() async {
     final p = await SharedPreferences.getInstance();
     final raw = p.getString(_settingsKey);
-    if (raw == null) return {'language':'az','sound':true,'vibration':true,'server_url':'http://10.0.2.2:8080','round_time':5};
+    if (raw == null) return {'language':'az','sound':true,'vibration':true,'round_time':5};
     try { return jsonDecode(raw) as Map<String,dynamic>; } catch (_) { return {}; }
   }
 

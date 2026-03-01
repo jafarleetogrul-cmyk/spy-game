@@ -30,7 +30,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     setState(() { _loading = true; _error = null; });
     final gp = context.read<GameProvider>();
     try {
-      final api = ApiService(gp.serverUrl);
+      final api = ApiService(GameProvider.serverUrl);
       if (gp.currentUser != null) api.setToken(gp.currentUser!.token);
 
       final board = await api.getLeaderboard();
