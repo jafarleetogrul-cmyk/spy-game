@@ -1,0 +1,104 @@
+name: Build APK v3
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: stable
+          cache: true
+
+      - name: Create base Flutter project
+        run: flutter create --org com.spygame --project-name spy_game /tmp/base_app
+
+      - name: Copy source files
+        run: |
+          rm -rf /tmp/base_app/lib
+          cp -r lib /tmp/base_app/lib
+          cp pubspec.yaml /tmp/base_app/pubspec.yaml
+
+      - name: Generate sound assets
+        run: |
+          mkdir -p /tmp/base_app/assets/sounds
+          python3 - << 'PYEOF'
+          import wave, struct, math
+          def tone(f,freq,dur,vol=0.35,fade=0.02):
+            sr=44100;n=int(sr*dur);nf=int(sr*fade)
+            with wave.open(f,'w') as w:
+              w.setnchannels(1);w.setsampwidth(2);w.setframerate(sr)
+              for i in range(n):
+                t=i/sr;v=math.sin(2*math.pi*freq*t)
+                if i<nf:v*=i/nf
+                elif i>n-nf:v*=(n-i)/nf
+                w.writeframes(struct.pack('<h',int(v*vol*32767)))
+          def chord(f,freqs,dur,vol=0.25):
+            sr=44100;n=int(sr*dur);nf=int(sr*0.02)
+            with wave.open(f,'w') as w:
+              w.setnchannels(1);w.setsampwidth(2);w.setframerate(sr)
+              for i in range(n):
+                t=i/sr;v=sum(math.sin(2*math.pi*fq*t) for fq in freqs)/len(freqs)
+                if i<nf:v*=i/nf
+                elif i>n-nf:v*=(n-i)/nf
+                w.writeframes(struct.pack('<h',int(v*vol*32767)))
+          b='/tmp/base_app/assets/sounds'
+          tone(b+'/card_flip.wav',880,0.08,0.3)
+          chord(b+'/round_end.wav',[523,659,784],0.5,0.3)
+          chord(b+'/game_over.wav',[784,659,523,440],1.0,0.2)
+          tone(b+'/timer_tick.wav',1000,0.05,0.2)
+          chord(b+'/timer_warning.wav',[880,1100],0.3,0.35)
+          chord(b+'/win.wav',[523,659,784,1047],1.2,0.25)
+          print('Ses faylları hazır')
+          PYEOF
+
+      - name: Add Android permissions
+        run: |
+          MANIFEST=/tmp/base_app/android/app/src/main/AndroidManifest.xml
+          sed -i 's|<manifest |<manifest |' $MANIFEST
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n</manifest>|' $MANIFEST
+          sed -i 's|android:label="spy_game"|android:label="Spy Game" android:usesCleartextTraffic="true"|' $MANIFEST
+
+      - name: Fix Kotlin stdlib conflict
+        run: |
+          cat >> /tmp/base_app/android/app/build.gradle << 'GRADLE'
+
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }
+          GRADLE
+
+      - name: Get dependencies
+        working-directory: /tmp/base_app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: /tmp/base_app
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spy-game-v3-${{ github.run_id }}
+          path: /tmp/base_app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
